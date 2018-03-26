@@ -26,6 +26,7 @@ import forms.address.AddressFormProvider
 import identifiers.register.trustees.TrusteesId
 import identifiers.register.trustees.company.CompanyDetailsId
 import models.address.Address
+import models.register.CountryOptions
 import models.{CompanyDetails, Index, NormalMode}
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
@@ -37,29 +38,29 @@ import play.api.libs.json.Json
 import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import utils._
+import utils.{FakeNavigator, InputOption, Navigator}
+import viewmodels.Message
 import viewmodels.address.ManualAddressViewModel
 import views.html.address.manualAddress
 
-
-class PreviousAddressControllerSpec extends ControllerSpecBase with MockitoSugar with ScalaFutures with CSRFRequest with OptionValues {
-
-  def countryOptions: CountryOptions = new CountryOptions(options)
-
-  val options = Seq(InputOption("territory:AE-AZ", "Abu Dhabi"), InputOption("country:AF", "Afghanistan"))
+class CompanyAddressControllerSpec extends ControllerSpecBase with MockitoSugar with ScalaFutures with CSRFRequest with OptionValues {
 
   val firstIndex = Index(0)
 
-  val formProvider = new AddressFormProvider(FakeCountryOptions())
   val companyDetails = CompanyDetails("companyName", None, None)
 
+  val countryOptions = new CountryOptions(
+    Seq(InputOption("GB", "GB"))
+  )
+
+  val formProvider = new AddressFormProvider()
   val form: Form[Address] = formProvider()
 
   val retrieval = new FakeDataRetrievalAction(Some(Json.obj(
     TrusteesId.toString -> Json.arr(Json.obj(CompanyDetailsId.toString -> companyDetails))
   )))
 
-  "PreviousAddress Controller" must {
+  "CompanyAddress Controller" must {
 
     "render manualAddress from GET request" in {
 
@@ -73,11 +74,13 @@ class PreviousAddressControllerSpec extends ControllerSpecBase with MockitoSugar
       )) {
         implicit app =>
 
+          val controller = app.injector.instanceOf[CompanyAddressController]
+
           val viewmodel = ManualAddressViewModel(
-            PreviousAddressController.onSubmit(NormalMode, firstIndex),
+            controller.postCall(NormalMode, firstIndex),
             countryOptions.options,
-            "messages__companyAddress__title",
-            "messages__companyAddress__heading",
+            Message(controller.title),
+            Message(controller.heading),
             secondaryHeader = Some(companyDetails.companyName)
           )
 
@@ -123,7 +126,7 @@ class PreviousAddressControllerSpec extends ControllerSpecBase with MockitoSugar
             .withFormUrlEncodedBody(
               ("addressLine1", "value 1"),
               ("addressLine2", "value 2"),
-              ("postCode", "AB1 1AB"),
+              ("postCode.postCode", "AB1 1AB"),
               "country" -> "GB"))
 
           val result = route(app, fakeRequest).value
