@@ -78,7 +78,8 @@ class PreviousAddressControllerSpec extends ControllerSpecBase with MockitoSugar
             countryOptions.options,
             "messages__companyAddress__title",
             "messages__companyAddress__heading",
-            secondaryHeader = Some(companyDetails.companyName)
+            secondaryHeader = Some(companyDetails.companyName),
+            hint = "messages__companyAddress__trustee__lede"
           )
 
           def viewAsString(form: Form[_] = form) = manualAddress(frontendAppConfig, form, viewmodel)(fakeRequest, messages).toString
@@ -132,6 +133,5 @@ class PreviousAddressControllerSpec extends ControllerSpecBase with MockitoSugar
           redirectLocation(result).value mustEqual onwardCall.url
       }
     }
-
   }
 }
